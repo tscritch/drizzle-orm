@@ -1530,20 +1530,21 @@ WHERE
 						}
 					}
 
+					console.log('tableSchema', tableSchema);
+					
 					const dbIndexes = await db.query(
 						`SELECT  DISTINCT ON (t.relname, ic.relname, k.i) t.relname as table_name, ic.relname AS indexname,
         k.i AS index_order,
         i.indisunique as is_unique,
         am.amname as method,
         ic.reloptions as with,
-        coalesce(a.attname,
-                  (('{' || pg_get_expr(
-                              i.indexprs,
-                              i.indrelid
-                          )
-                        || '}')::text[]
-                  )[k.i]
-                ) AS column_name,
+				CASE 
+					WHEN a.attname IS NOT NULL THEN a.attname
+					WHEN pg_get_indexdef(i.indexrelid, k.i, true) IS NOT NULL THEN 
+							pg_get_indexdef(i.indexrelid, k.i, true)
+					ELSE
+							(('{' || pg_get_expr(i.indexprs, i.indrelid) || '}')::text[])[k.i]
+				END AS column_name,
           CASE
         WHEN pg_get_expr(i.indexprs, i.indrelid) IS NOT NULL THEN 1
         ELSE 0
@@ -1935,7 +1936,7 @@ WHERE
 
 const defaultForColumn = (column: any, internals: PgKitInternals, tableName: string) => {
 	const columnName = column.column_name;
-	const isArray = internals?.tables[tableName]?.columns[columnName]?.isArray ?? false;
+	const isArray = internals?.tables[tableName]?.columns[columnName]?.isArray ?? false;	
 
 	if (
 		column.column_default === null
@@ -1951,10 +1952,14 @@ const defaultForColumn = (column: any, internals: PgKitInternals, tableName: str
 		column.column_default = column.column_default.slice(0, -2);
 	}
 
+	if (isArray && column.column_default.includes("ARRAY")) {
+		return `\"${column.column_default}\"`
+	}
+
 	// if (
 	// 	!['integer', 'smallint', 'bigint', 'double precision', 'real'].includes(column.data_type)
 	// ) {
-	column.column_default = column.column_default.replace(/::(.*?)(?<![^\w"])(?=$)/, '');
+		column.column_default = column.column_default.replace(/::(.*?)(?<![^\w"])(?=$)/, '');
 	// }
 
 	const columnDefaultAsString: string = column.column_default.toString();

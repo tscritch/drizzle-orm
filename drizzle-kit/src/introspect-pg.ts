@@ -33,6 +33,7 @@ const pgImportsList = new Set([
 	'integer',
 	'bigint',
 	'boolean',
+	'bytea',
 	'text',
 	'varchar',
 	'char',
@@ -857,6 +858,10 @@ const column = (
 
 	if (lowered.startsWith('serial')) {
 		return `${withCasing(name, casing)}: serial(${dbColumnName({ name, casing })})`;
+	}
+
+	if (lowered.startsWith('bytea')) {
+		return `${withCasing(name, casing)}: bytea(${dbColumnName({ name, casing })})`;
 	}
 
 	if (lowered.startsWith('smallserial')) {

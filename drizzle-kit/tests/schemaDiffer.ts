@@ -2284,6 +2284,8 @@ export const introspectPgToFile = async (
 
 	// write to ts file
 	const file = schemaToTypeScript(introspectedSchema, 'camel');
+	console.log(file.file);
+	
 
 	fs.writeFileSync(`tests/introspect/postgres/${testName}.ts`, file.file);
 
