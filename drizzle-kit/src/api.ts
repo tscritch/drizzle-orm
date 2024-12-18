@@ -81,9 +81,6 @@ export const generateMigration = async (
 ) => {
 	const { applyPgSnapshotsDiff } = await import('./snapshotsDiffer');
 
-	console.log('prev', prev);
-	
-
 	const validatedPrev = pgSchema.parse(prev);
 	const validatedCur = pgSchema.parse(cur);
 

@@ -1530,8 +1530,6 @@ WHERE
 						}
 					}
 
-					console.log('tableSchema', tableSchema);
-					
 					const dbIndexes = await db.query(
 						`SELECT  DISTINCT ON (t.relname, ic.relname, k.i) t.relname as table_name, ic.relname AS indexname,
         k.i AS index_order,

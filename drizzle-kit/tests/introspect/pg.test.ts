@@ -685,9 +685,6 @@ test.only('introspect indexes', async () => {
 		'introspect-indexes',
 	);
 
-	console.log('statements', statements, sqlStatements);
-	
-
 	expect(statements.length).toBe(0);
 	expect(sqlStatements.length).toBe(0);
 })
