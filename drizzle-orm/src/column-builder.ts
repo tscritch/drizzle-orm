@@ -16,7 +16,8 @@ export type ColumnDataType =
 	| 'date'
 	| 'bigint'
 	| 'custom'
-	| 'buffer';
+	| 'buffer'
+	| 'bytea';
 
 export type Dialect = 'pg' | 'mysql' | 'sqlite' | 'singlestore' | 'common';
 

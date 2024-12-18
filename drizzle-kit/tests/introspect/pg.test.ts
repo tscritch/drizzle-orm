@@ -9,6 +9,7 @@ import {
 	cidr,
 	date,
 	doublePrecision,
+	index,
 	inet,
 	integer,
 	interval,
@@ -31,6 +32,7 @@ import {
 	text,
 	time,
 	timestamp,
+	uniqueIndex,
 	uuid,
 	varchar,
 } from 'drizzle-orm/pg-core';
@@ -242,7 +244,9 @@ test('instrospect all column types', async () => {
 			bigint: bigint('bigint', { mode: 'number' }).default(100),
 			boolean: boolean('boolean').default(true),
 			text: text('test').default('abc'),
+			text_empty: text('test_empty').default(''),
 			varchar: varchar('varchar', { length: 25 }).default('abc'),
+			varchar_empty: varchar('varchar_empty', { length: 25 }).default(''),
 			char: char('char', { length: 3 }).default('abc'),
 			serial: serial('serial'),
 			bigserial: bigserial('bigserial', { mode: 'number' }),
@@ -281,7 +285,7 @@ test('instrospect all column types', async () => {
 	expect(sqlStatements.length).toBe(0);
 });
 
-test('instrospect all column array types', async () => {
+test.only('instrospect all column array types', async () => {
 	const client = new PGlite();
 
 	const myEnum = pgEnum('my_enum', ['a', 'b', 'c']);
@@ -302,6 +306,7 @@ test('instrospect all column array types', async () => {
 			real: real('real').array().default([100, 200]),
 			json: json('json').$type<{ attr: string }>().array().default([{ attr: 'value1' }, { attr: 'value2' }]),
 			jsonb: jsonb('jsonb').$type<{ attr: string }>().array().default([{ attr: 'value1' }, { attr: 'value2' }]),
+			jsonb_raw_default: jsonb('jsonb').$type<{ attr: string }>().array().default(sql`array['{ "attr": "value1" }', '{ "attr": "value2" }']::jsonb[]`),
 			time: time('time').array().default(['00:00:00', '01:00:00']),
 			timestamp: timestamp('timestamp', { withTimezone: true, precision: 6 })
 				.array()
@@ -432,6 +437,7 @@ test('instrospect strings with single quotes', async () => {
 			enum: myEnum('my_enum').default('escape\'s quotes " '),
 			text: text('text').default('escape\'s quotes " '),
 			varchar: varchar('varchar').default('escape\'s quotes " '),
+			varchar_empty: varchar('varchar_empty').default(''),
 		}),
 	};
 
@@ -656,6 +662,32 @@ test('introspect materialized view #2', async () => {
 	expect(statements.length).toBe(0);
 	expect(sqlStatements.length).toBe(0);
 });
+
+test.only('introspect indexes', async () => {
+	const client = new PGlite();
+
+	const schema = {
+		columns: pgTable('columns', {
+			integer: integer('integer').default(10),
+			text: text('text').default('abc'),
+			serial: serial('serial'),
+		}, (table) => [
+			index("columns_integer").using("btree", table.integer.asc()),
+			uniqueIndex().using("btree", table.integer.asc()).where(sql`(serial IS NULL)`),
+			uniqueIndex("integer_text_lower_idx").using("btree", sql`integer`, sql`lower(text)`).where(sql`(serial IS NULL)`),
+		]
+		),
+	};
+
+	const { statements, sqlStatements } = await introspectPgToFile(
+		client,
+		schema,
+		'introspect-indexes',
+	);
+
+	expect(statements.length).toBe(0);
+	expect(sqlStatements.length).toBe(0);
+})
 
 test('basic policy', async () => {
 	const client = new PGlite();
